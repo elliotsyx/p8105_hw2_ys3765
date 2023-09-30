@@ -1,0 +1,74 @@
+---
+title: "p8105_hw2_ys3765"
+author: "Yixiao Sun"
+date: "2023-09-30"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(dplyr)
+library(readr)
+```
+
+
+#Problem 2
+
+```{r clean mr_trash_wheel}
+mr_trash_wheel <- read_excel("202207 Trash Wheel Collection Data.xlsx",sheet = 1) %>% janitor::clean_names() %>% select(-x15,-x16) %>% mutate(year = as.character(year)) %>% mutate(month = as.character(month))
+
+mr_trash_wheel$homes_powered <- mr_trash_wheel$weight_tons*500/30
+view(mr_trash_wheel)
+```
+
+
+```{r clean prof_trash_wheel}
+prof_trash_wheel <- read_excel("202207 Trash Wheel Collection Data.xlsx",sheet = 2) %>% janitor::clean_names()%>%mutate(year = as.character(year)) %>% mutate(month = as.character(month))
+
+prof_trash_wheel$homes_powered <- prof_trash_wheel$weight_tons*500/30
+view(prof_trash_wheel)
+```
+
+
+```{r clean gwynnda}
+gwynnda <- read_excel("202207 Trash Wheel Collection Data.xlsx",sheet = 4) %>% janitor::clean_names()%>%mutate(year = as.character(year)) %>% mutate(month = as.character(month))
+gwynnda$homes_powered <- gwynnda$weight_tons*500/30
+gwynnda%>%na.omit()
+view(gwynnda)
+```
+
+```{r}
+mr_trash_wheel$trash_wheel <- "Mr. Trash Wheel"
+prof_trash_wheel$trash_wheel <- "Professor Trash Wheel"
+gwynnda$trash_wheel <- "Gwynnda"
+```
+
+```{r}
+combined_data_step1 <- bind_rows(mr_trash_wheel, prof_trash_wheel)
+combined_data<-bind_rows(combined_data_step1,gwynnda)
+view(combined_data)
+```
+
+#Problem 3
+```{r import data}
+
+library(readr)
+
+mci_baseline <- read_csv("data_mci/MCI_baseline.csv",skip=1)%>%janitor::clean_names() %>% mutate(sex = ifelse(sex == 1,"Male","Female")) %>% mutate(apoe4 = ifelse(apoe4 == 1, "Carrier","Non-Carrier")) %>% filter(age_at_onset != '.')
+
+
+view(mci_baseline)
+
+mci_amyloid <- read_csv("data_mci/mci_amyloid.csv",skip = 1)%>%janitor::clean_names()%>%rename("id" = "study_id")
+view(mci_amyloid)
+
+Combined_data_2<-inner_join(mci_baseline,mci_amyloid)
+view(Combined_data_2)
+```
+
+
