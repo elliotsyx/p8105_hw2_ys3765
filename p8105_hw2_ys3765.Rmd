@@ -71,7 +71,7 @@ For these three dataset, the mr_trash_wheel dataset has `r nrow(mr_trash_wheel)`
 
 library(readr)
 mci_baseline_original <- read_csv("data_mci/MCI_baseline.csv",skip=1)%>%
-                janitor::clean_names() 
+                janitor::clean_names()
 
 mci_baseline <- read_csv("data_mci/MCI_baseline.csv",skip=1)%>%
                 janitor::clean_names() %>% 
@@ -100,10 +100,14 @@ mci_amyloid
 
 only_data<-anti_join(mci_baseline,mci_amyloid)
 only_data_2<-anti_join(mci_amyloid,mci_baseline)
+only_data
+only_data_2
+
 Combined_data_2<-inner_join(mci_baseline,mci_amyloid)
-
 Combined_data_2
-```
-For these two datasets, the first cleaning step is to find those patients who do not show MCI at baseline. The baseline dataset showing features of the patients' geographical info including educational level, age, the onset age. So the basic cleaning step should be using the current age to compare with the age at onset, and we get `r nrow(mci_baseline)` rows of the dataset, comparing with the original dataset has `r nrow(mci_baseline_original) ` numbers of participants recrutied. The average baseline age is `r mean(mci_baseline$age_at_onset)`. The proportion of women in the study are APOE4 carriers are `r sum(mci_baseline$sex == "Female" & mci_baseline$apoe4 == "Carrier")/sum(mci_baseline$sex == "Female")`.
 
-For the two datasets, the mci_baseline has `r nrow(mci_baseline)` rows before cleaning, and for the mci_amyloid has `r nrow(mci_amyloid)` rows. So partial participants appeared in only one dataset. 
+write_csv(Combined_data_2,"/Users/elliot-sun/Desktop/P8105_ Data Science/p8105_hw2_ys3765/data_mci/combined_data.csv")
+```
+For these two datasets, the first cleaning step is to find those patients who do not show MCI at baseline. The baseline dataset showing features of the patients' geographical info including educational level, age, the onset age. So the basic cleaning step should be using the current age to compare with the age at onset, and we get `r nrow(mci_baseline)` rows of the dataset, comparing with the original dataset has `r nrow(mci_baseline_original) ` numbers of participants recrutied. The average baseline age is `r mean(mci_baseline$current_age)`. The proportion of women in the study are APOE4 carriers are `r sum(mci_baseline$sex == "Female" & mci_baseline$apoe4 == "Carrier")/sum(mci_baseline$sex == "Female")`.
+
+For the two datasets, the mci_baseline has `r nrow(mci_baseline)` rows before cleaning, and for the mci_amyloid has `r nrow(mci_amyloid)` rows. So partial participants appeared in only one dataset.(`r nrow(only_data)` and `r nrow(only_data_2)` from the function only_data and only_data_2). The combined dataset cleaned the data and put the same patients' value together in the order of time length(from beginning to 8 years), the whole dataset contains `r nrow(Combined_data_2)` all other demographic info are shown alone with the age and ID and values.
