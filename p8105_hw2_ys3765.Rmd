@@ -9,37 +9,44 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r hide=TRUE}
 library(tidyverse)
 library(readxl)
 library(dplyr)
 library(readr)
 ```
 
-
 #Problem 2
 
 ```{r clean mr_trash_wheel}
-mr_trash_wheel <- read_excel("202207 Trash Wheel Collection Data.xlsx",sheet = 1) %>% janitor::clean_names() %>% select(-x15,-x16) %>% mutate(year = as.character(year)) %>% mutate(month = as.character(month))
+mr_trash_wheel <- read_excel("202309 Trash Wheel Collection Data.xlsx",sheet = 1) %>%                       janitor::clean_names() %>% select(-x15,-x16) %>% 
+                  mutate(year = as.character(year)) %>%                                                     mutate(month = as.character(month))
 
+mr_trash_wheel<- na.omit(mr_trash_wheel)
 mr_trash_wheel$homes_powered <- mr_trash_wheel$weight_tons*500/30
-view(mr_trash_wheel)
+mr_trash_wheel
 ```
 
-
 ```{r clean prof_trash_wheel}
-prof_trash_wheel <- read_excel("202207 Trash Wheel Collection Data.xlsx",sheet = 2) %>% janitor::clean_names()%>%mutate(year = as.character(year)) %>% mutate(month = as.character(month))
-
+prof_trash_wheel <- read_excel("202309 Trash Wheel Collection Data.xlsx",sheet = 2) %>%
+                    janitor::clean_names()%>%
+                    mutate(year = as.character(year)) %>% 
+                    mutate(month = as.character(month))
+prof_trash_wheel<-prof_trash_wheel[-107,]
 prof_trash_wheel$homes_powered <- prof_trash_wheel$weight_tons*500/30
-view(prof_trash_wheel)
+prof_trash_wheel
 ```
 
 
 ```{r clean gwynnda}
-gwynnda <- read_excel("202207 Trash Wheel Collection Data.xlsx",sheet = 4) %>% janitor::clean_names()%>%mutate(year = as.character(year)) %>% mutate(month = as.character(month))
+gwynnda <- read_excel("202309 Trash Wheel Collection Data.xlsx",sheet = 4) %>%
+          janitor::clean_names()%>%mutate(year = as.character(year)) %>% 
+          mutate(month = as.character(month))
+
+gwynnda<-gwynnda[-107,]
+gwynnda<-gwynnda[-107,]
 gwynnda$homes_powered <- gwynnda$weight_tons*500/30
-gwynnda%>%na.omit()
-view(gwynnda)
+gwynnda
 ```
 
 ```{r}
@@ -51,24 +58,52 @@ gwynnda$trash_wheel <- "Gwynnda"
 ```{r}
 combined_data_step1 <- bind_rows(mr_trash_wheel, prof_trash_wheel)
 combined_data<-bind_rows(combined_data_step1,gwynnda)
-view(combined_data)
+combined_data
 ```
+
+For these three dataset, the mr_trash_wheel dataset has `r nrow(mr_trash_wheel)` rows and `r ncol(mr_trash_wheel)` after cleaning. The prof_trash_wheel dataset has `r nrow(prof_trash_wheel)` rows and `r ncol(prof_trash_wheel)` after cleaning. The Gwynnda dataset has `r nrow(gwynnda)` rows and `r ncol(gwynnda)` after cleaning. The combined dataset has intotal `r nrow(combined_data)` and `r ncol(combined_data)`. The important variables in each of these datasets including the geographic info of the dumpster, but in order to calculate the trash that could be using for powering homes, weight_tons variable is the most essential one. The total weight of trash collected by Professor Trash Wheel dataset is `r sum(prof_trash_wheel$weight_tons)`. And for the total number of cigarette butts collected by Gwynnda in July of 2021, the number is `r sum(head(gwynnda$cigarette_butts,5))`.
+
+
+
 
 #Problem 3
 ```{r import data}
 
 library(readr)
+mci_baseline_original <- read_csv("data_mci/MCI_baseline.csv",skip=1)%>%
+                janitor::clean_names() 
 
-mci_baseline <- read_csv("data_mci/MCI_baseline.csv",skip=1)%>%janitor::clean_names() %>% mutate(sex = ifelse(sex == 1,"Male","Female")) %>% mutate(apoe4 = ifelse(apoe4 == 1, "Carrier","Non-Carrier")) %>% filter(age_at_onset != '.')
+mci_baseline <- read_csv("data_mci/MCI_baseline.csv",skip=1)%>%
+                janitor::clean_names() %>% 
+                mutate(sex = ifelse(sex == 1,"Male","Female")) %>% 
+                mutate(apoe4 = ifelse(apoe4 == 1, "Carrier","Non-Carrier")) %>%        
+                filter(current_age < age_at_onset|age_at_onset==".")%>%
+                mutate(age_at_onset = if_else(age_at_onset == ".", NA, age_at_onset))
 
+mci_baseline
 
-view(mci_baseline)
+mci_amyloid <- read_csv("data_mci/mci_amyloid.csv",skip = 1)%>%
+              janitor::clean_names()%>%
+              rename("id" = "study_id")%>%
+              pivot_longer(baseline:time_8,
+                           names_to = "year",
+                           values_to = "value" )%>%
+              mutate(year =  case_match(
+                              year,
+                            "baseline" ~ 0, 
+                            "time_2" ~ 2, 
+                            "time_4" ~ 4,
+                            "time_6" ~ 6, 
+                            "time_8" ~ 8))
 
-mci_amyloid <- read_csv("data_mci/mci_amyloid.csv",skip = 1)%>%janitor::clean_names()%>%rename("id" = "study_id")
-view(mci_amyloid)
+mci_amyloid
 
+only_data<-anti_join(mci_baseline,mci_amyloid)
+only_data_2<-anti_join(mci_amyloid,mci_baseline)
 Combined_data_2<-inner_join(mci_baseline,mci_amyloid)
-view(Combined_data_2)
+
+Combined_data_2
 ```
+For these two datasets, the first cleaning step is to find those patients who do not show MCI at baseline. The baseline dataset showing features of the patients' geographical info including educational level, age, the onset age. So the basic cleaning step should be using the current age to compare with the age at onset, and we get `r nrow(mci_baseline)` rows of the dataset, comparing with the original dataset has `r nrow(mci_baseline_original) ` numbers of participants recrutied. The average baseline age is `r mean(mci_baseline$age_at_onset)`. The proportion of women in the study are APOE4 carriers are `r sum(mci_baseline$sex == "Female" & mci_baseline$apoe4 == "Carrier")/sum(mci_baseline$sex == "Female")`.
 
-
+For the two datasets, the mci_baseline has `r nrow(mci_baseline)` rows before cleaning, and for the mci_amyloid has `r nrow(mci_amyloid)` rows. So partial participants appeared in only one dataset. 
